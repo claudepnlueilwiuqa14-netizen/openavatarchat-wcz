@@ -1,0 +1,55 @@
+default:
+  logger:
+    log_level: "INFO"
+  service:
+    host: "0.0.0.0"
+    port: 8282
+    cert_file: "ssl_certs/localhost.crt"
+    cert_key: "ssl_certs/localhost.key"
+  chat_engine:
+    model_root: "models"
+    concurrent_limit: 1
+    handler_search_path:
+      - "src/handlers"
+    handler_configs:
+      RtcClient:
+        module: client/rtc_client/client_handler_rtc
+        connection_ttl: 900
+        output_video_fps: 24  # Must equal AvatarMusetalk.fps for correct A/V sync
+      InterruptHandler:
+        module: logic/interrupt/interrupt_handler
+      SileroVad:
+        module: vad/silerovad/vad_handler_silero
+        speaking_threshold: 0.5
+        start_delay: 2048
+        end_delay: 5000
+        buffer_look_back: 5000
+        speech_padding: 512
+      SenseVoice:
+        enabled: True
+        module: asr/sensevoice/asr_handler_sensevoice
+        model_name: "iic/SenseVoiceSmall"
+      Edge_TTS:
+        enabled: True
+        module: tts/edgetts/tts_handler_edgetts
+        voice: "zh-CN-XiaoxiaoNeural"
+      LLMOpenAICompatible:
+        enabled: True
+        module: llm/openai_compatible/llm_handler_openai_compatible
+        # === 王承泽定制：LLM 走本机 key 池中转站（codex-free-gateway）===
+        # 中转站自带：多源聚合 + 流式透传 + failover + 多 key 轮询单 key 熔断
+        model_name: "claude-opus-5-5"
+        enable_video_input: False
+        history_length: 20
+        system_prompt: "你是王承泽的 AI 搭档，住在他电脑屏幕里，能用嘴跟他说话。风格：直接、不废话、像熟友。回答必须简短——一两句话说完，标点要全（TTS 要靠标点断句）。他问技术问题就真给答案，他闲聊就接得住。永远说中文。"
+        api_url: "http://127.0.0.1:8789/v1"
+        api_key: "pojia"
+      AvatarMusetalk:
+        module: avatar/musetalk/avatar_handler_musetalk
+        fps: 24
+        batch_size: 2
+        avatar_video_path: "src/handlers/avatar/musetalk/MuseTalk/data/video/yongen.mp4"
+        avatar_model_dir: "models/musetalk/avatar_model"
+        force_create_avatar: false
+        debug: false
+        multi_thread_inference: true
